@@ -1,0 +1,29 @@
+---
+title: "week9_structure"
+output: html_document
+---
+
+```{R setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(compmus)
+```
+## 1) Cepstrogram — Two of Hearts (MFCC)
+
+```{r two_cepstro}
+two_mfcc <- read_csv("two-mfcc.csv", show_col_types = FALSE)
+
+two_mfcc_long <- two_mfcc %>%
+  pivot_longer(cols = starts_with("BIN"),
+               names_to = "mfcc",
+               values_to = "value") %>%
+  filter(mfcc != "BIN 1")
+
+ggplot(two_mfcc_long, aes(x = TIME, y = mfcc, fill = value)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  theme_classic() +
+  labs(title = "Two of Hearts – Cepstrogram (MFCC, BIN 2–21)",
+       x = "Time (s)", y = "MFCC coefficient")
+```
+
+
