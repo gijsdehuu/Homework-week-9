@@ -1,6 +1,8 @@
 ---
 title: "week9_structure"
-output: html_document
+output:
+  html_document:
+    self_contained: false
 ---
 
 ```{R setup, message=FALSE, warning=FALSE}
