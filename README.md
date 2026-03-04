@@ -1,4 +1,4 @@
-This project compares *Two of Hearts* and *Levo* using:
+This project compares Two of Hearts and Levo using:
 
 Timbre Self-Similarity (MFCC)
 ![Timbre SSM](docs/index_files/figure-html/timbre-ssm-combined-1.png)
