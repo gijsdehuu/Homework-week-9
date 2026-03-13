@@ -1,0 +1,32 @@
+---
+title: "week11.qmd"
+author: "Gijs de Huu"
+format: dashboard
+---
+# Analysis
+Both tempograms show strong rhythmic periodicities around 120–130 BPM, which is a common characteristic of dance-oriented music.
+
+```{r}
+library(tidyverse)
+
+plot_tempogram <- function(file, label) {
+
+  read_csv(file) |>
+    pivot_longer(-TIME, names_to = "tempo", values_to = "value") |>
+    mutate(tempo = as.numeric(tempo)) |>
+    ggplot(aes(x = TIME, y = tempo, fill = value)) +
+    geom_raster() +
+    scale_fill_viridis_c() +
+    labs(
+      title = paste("Tempogram:", label),
+      x = "Time (s)",
+      y = "Tempo (BPM)"
+    ) +
+    coord_cartesian(ylim = c(40, 300)) +
+    theme_minimal()
+
+}
+
+plot_tempogram("twohearts-tempogram.csv", "Two of Hearts")
+plot_tempogram("levo-tempogram.csv", "Levo")
+```
