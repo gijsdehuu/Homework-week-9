@@ -174,4 +174,6 @@ p_key <- ggplot(
   facet_wrap(~ track, nrow = 1) +
   theme_minimal() +
   labs(title = "Estimated Key Over Time", x = "Time (s)", y = "")
+
+p_key
 ```
