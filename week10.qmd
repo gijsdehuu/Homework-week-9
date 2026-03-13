@@ -4,13 +4,11 @@ author: "Gijs de Huu"
 format: dashboard
 ---
 # Structure Analysis
-::: {.columns}
-
-::: {.column width="50%"}
 ## Harmonic structure (Chroma Self-Similarity)
 This chroma SSM displays patterns of harmonic repetition. Two of Hearts shows more harmonic cycles and Levo shows weaker harmonic repitition patterns which aligns with minimal techno’s focus on texture over harmonic progression.
 
-```{r chroma-ssm-combined, message=FALSE, warning=FALSE}
+```{r chroma-ssm-combined, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+
 library(tidyverse)
 library(compmus)
 
@@ -60,13 +58,12 @@ dir.create("images", showWarnings = FALSE)
 
 ggsave("images/chroma-ssm.png", p_chroma, width = 12, height = 5, dpi = 200)
 ```
-:::
 
-::: {.column width="50%"}
 ## Timbral structure (MFCC)
 These MFCC-based self-similarity matrices show a difference in structure. Where Levo shows clear changes in timbre, which is typical of minimal techno,
 Two of Hearts appears more to be more similar in timbre.
-```{r timbre-ssm-combined, message=FALSE, warning=FALSE}
+```{r timbre-ssm-combined, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+
 library(tidyverse)
 library(compmus)
 
@@ -74,7 +71,6 @@ make_timbre_ssm <- function(path, label, downsample = 50L,
                             norm = "euclidean", dist = "cosine") {
   mfcc <- read_csv(path, show_col_types = FALSE)
 
-  # estimate frame step from TIME
   dt <- median(diff(mfcc$TIME), na.rm = TRUE)
 
   mfcc %>%
@@ -111,10 +107,6 @@ p_timbre <- ggplot(ssm_both, aes(
 p_timbre
 ggsave("images/timbre-ssm.png", p_timbre, width = 12, height = 5, dpi = 200)
 ```
-
-:::
-
-:::
 
 # Harmonic Analysis
 ## Key Estimation
