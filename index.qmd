@@ -4,8 +4,11 @@ author: "Gijs de Huu"
 format: dashboard
 ---
 # Structure Analysis
-## 1) Chroma Self-Similarity
-This chroma SSM displays patterns of harmonic repetition. Two of Hearts shows more harmonic cycles and Levo shows weaker harmonic distribution which aligns with minimal techno’s focus on texture over harmonic progression.
+::: {.columns}
+
+::: {.column width="50%"}
+## Harmonic structure (Chroma Self-Similarity)
+This chroma SSM displays patterns of harmonic repetition. Two of Hearts shows more harmonic cycles and Levo shows weaker harmonic repitition patterns which aligns with minimal techno’s focus on texture over harmonic progression.
 
 ```{r chroma-ssm-combined, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -48,8 +51,8 @@ p_chroma <- ggplot(chroma_both, aes(
   coord_fixed() +
   scale_fill_viridis_c(guide = "none") +
   facet_wrap(~ track, nrow = 1) +
-  theme_classic() +
-  labs(title = "Chroma Self-Similarity", x = "", y = "")
+  theme_void() +
+  labs(title = "Harmonic Structure (Chroma Self-Similarity)", x = "", y = "")
 
 p_chroma
 
@@ -57,9 +60,11 @@ dir.create("images", showWarnings = FALSE)
 
 ggsave("images/chroma-ssm.png", p_chroma, width = 12, height = 5, dpi = 200)
 ```
+:::
 
-## 2) Timbre Self-Similarity (MFCC)
-These MFCC-based self-similarity matrices show a difference in structure between the two tracks. Where Levo shows clear changes in timbre, which is typical of minimal techno,
+::: {.column width="50%"}
+## Timbral structure (MFCC)
+These MFCC-based self-similarity matrices show a difference in structure. Where Levo shows clear changes in timbre, which is typical of minimal techno,
 Two of Hearts appears more to be more similar in timbre.
 ```{r timbre-ssm-combined, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -100,16 +105,81 @@ p_timbre <- ggplot(ssm_both, aes(
   coord_fixed() +
   scale_fill_viridis_c(guide = "none") +
   facet_wrap(~ track, nrow = 1) +
-  theme_classic() +
-  labs(title = "Timbre Self-Similarity (MFCC)", x = "", y = "")
+  theme_void() +
+  labs(title = "Timbre Structure (MFCC Self Similarity)", x = "", y = "")
 
 p_timbre
 ggsave("images/timbre-ssm.png", p_timbre, width = 12, height = 5, dpi = 200)
 ```
 
+:::
+
+:::
+
 # Harmonic Analysis
-
 ## Key Estimation
+Two of Hearts shows clearer clustering around specific tonal centres and Levo shows a less clearly defined key pattern. 
+```{r key-estimation, message=FALSE, warning=FALSE}
+circshift <- function(v, n) {
+  if (n == 0) v else c(tail(v, n), head(v, -n))
+}
 
-```{r}
-# we will add the key estimation code here next
+major_key <- c(6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88)
+minor_key <- c(6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17)
+
+key_templates <-
+  tribble(
+    ~name, ~template,
+    "Gb:maj", circshift(major_key, 6),
+    "Bb:min", circshift(minor_key, 10),
+    "Db:maj", circshift(major_key, 1),
+    "F:min", circshift(minor_key, 5),
+    "Ab:maj", circshift(major_key, 8),
+    "C:min", circshift(minor_key, 0),
+    "Eb:maj", circshift(major_key, 3),
+    "G:min", circshift(minor_key, 7),
+    "Bb:maj", circshift(major_key, 10),
+    "D:min", circshift(minor_key, 2),
+    "F:maj", circshift(major_key, 5),
+    "A:min", circshift(minor_key, 9),
+    "C:maj", circshift(major_key, 0),
+    "E:min", circshift(minor_key, 4),
+    "G:maj", circshift(major_key, 7),
+    "B:min", circshift(minor_key, 11),
+    "D:maj", circshift(major_key, 2),
+    "F#:min", circshift(minor_key, 6),
+    "A:maj", circshift(major_key, 9),
+    "C#:min", circshift(minor_key, 1),
+    "E:maj", circshift(major_key, 4),
+    "G#:min", circshift(minor_key, 8),
+    "B:maj", circshift(major_key, 11),
+    "D#:min", circshift(minor_key, 3)
+  )
+
+make_keygram <- function(path, label, every_n = 50L) {
+  read_csv(path, show_col_types = FALSE) |>
+    compmus_wrangle_chroma() |>
+    filter(row_number() %% every_n == 0L) |>
+    compmus_match_pitch_template(
+      key_templates,
+      method = "euclidean",
+      norm = "manhattan"
+    ) |>
+    mutate(track = label)
+}
+
+two_keys  <- make_keygram("two-chroma.csv", "Two of Hearts", every_n = 50L)
+levo_keys <- make_keygram("levo-chroma.csv", "Levo", every_n = 50L)
+
+key_both <- bind_rows(two_keys, levo_keys)
+
+p_key <- ggplot(
+  key_both,
+  aes(x = start + duration / 2, width = 50 * duration, y = name, fill = d)
+) +
+  geom_tile() +
+  scale_fill_viridis_c(guide = "none") +
+  facet_wrap(~ track, nrow = 1) +
+  theme_minimal() +
+  labs(title = "Estimated Key Over Time", x = "Time (s)", y = "")
+```
