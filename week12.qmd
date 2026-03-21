@@ -1,0 +1,106 @@
+---
+title: "week 12: Classification of Italo Disco and Minimal Berlin Techno"
+author: "Gijs de Huu"
+format: html
+editor: visual
+---
+### Classification of Italo Disco and Minimal Berlin Techno
+
+A random forest classifier was trained to distinguish Italo disco from minimal Berlin techno using Spotify audio features from two playlists. The model was tested on a small set of songs that were not used during training. This makes it possible to test whether the two genres can be separated computationally on the basis of their audio profiles.
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(ranger)
+
+set.seed(123)
+
+italo <- read_csv("Italodisco.csv", show_col_types = FALSE) %>%
+  mutate(genre = "Italo")
+
+techno <- read_csv("MinimalBerlinTechno.csv", show_col_types = FALSE) %>%
+  mutate(genre = "Techno")
+
+tracks <- bind_rows(italo, techno)
+```
+
+```{r}
+glimpse(tracks)
+colnames(tracks)
+tracks %>% count(genre)
+
+tracks <- bind_rows(italo, techno) %>%
+  mutate(genre = factor(genre)) %>%
+  drop_na(
+    Danceability, Energy, Loudness, Speechiness, Acousticness,
+    Instrumentalness, Liveness, Valence, Tempo, `Duration (ms)`
+  )
+
+split <- initial_split(tracks, prop = 0.75, strata = genre)
+train_data <- training(split)
+test_data <- testing(split)
+
+genre_recipe <- recipe(
+  genre ~ Danceability + Energy + Loudness + Speechiness +
+    Acousticness + Instrumentalness + Liveness + Valence +
+    Tempo + `Duration (ms)`,
+  data = train_data
+) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_predictors())
+
+rf_model <- rand_forest(
+  trees = 500,
+  mtry = 3,
+  min_n = 2
+) %>%
+  set_engine("ranger", importance = "impurity") %>%
+  set_mode("classification")
+
+rf_workflow <- workflow() %>%
+  add_recipe(genre_recipe) %>%
+  add_model(rf_model)
+
+rf_fit <- fit(rf_workflow, data = train_data)
+
+rf_preds <- predict(rf_fit, test_data) %>%
+  bind_cols(test_data %>% select(genre))
+
+conf_mat_full <- conf_mat(rf_preds, truth = genre, estimate = .pred_class)
+acc_full <- accuracy(rf_preds, truth = genre, estimate = .pred_class)
+
+conf_mat_full
+acc_full
+```
+### Results:
+The confusion matrix shows that all four test tracks were assigned to their genre: 2 Italo disco tracks were correctly predicted as Italo disco, and 2 minimal Berlin techno tracks were correctly predicted as techno. No tracks were misclassified. However, it does not necessarily mean that all tracks from these genres can always be classified perfectly, because the dataset is too small.
+
+I trained a second classifier using fewer variables: danceability, energy, loudness, instrumentalness, valence, and tempo.
+```{r}
+
+
+genre_recipe_small <- recipe(
+  genre ~ Danceability + Energy + Loudness + Instrumentalness +
+    Valence + Tempo,
+  data = train_data
+) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_predictors())
+
+rf_workflow_small <- workflow() %>%
+  add_recipe(genre_recipe_small) %>%
+  add_model(rf_model)
+
+rf_fit_small <- fit(rf_workflow_small, data = train_data)
+
+rf_preds_small <- predict(rf_fit_small, test_data) %>%
+  bind_cols(test_data %>% select(genre))
+
+conf_mat_small <- conf_mat(rf_preds_small, truth = genre, estimate = .pred_class)
+acc_small <- accuracy(rf_preds_small, truth = genre, estimate = .pred_class)
+
+conf_mat_small
+acc_small
+
+```
+### Conclusion:
+Spotify audio features can be used to distinguish between Italo disco and minimal Berlin techno.
